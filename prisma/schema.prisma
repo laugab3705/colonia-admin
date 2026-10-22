@@ -1,0 +1,113 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  nombre        String
+  passwordHash  String   @map("password_hash")
+  rol           String   @default("COORDINADOR")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model Plan {
+  id          String    @id @default(cuid())
+  nombre      String
+  precioBase  Float     @map("precio_base")
+  descripcion String?
+  activo      Boolean   @default(true)
+  students    Student[]
+
+  @@map("plans")
+}
+
+model Student {
+  id            String           @id @default(cuid())
+  nombre        String
+  apellido      String
+  dni           String?
+  tutorContacto String           @map("tutor_contacto")
+  tutorTelefono String?          @map("tutor_telefono")
+  fichaMedica   String?          @map("ficha_medica")
+  planId        String           @map("plan_id")
+  plan          Plan             @relation(fields: [planId], references: [id])
+  estado        String           @default("ACTIVO")
+  fechaAlta     DateTime         @default(now()) @map("fecha_alta")
+  pagos         StudentPayment[]
+
+  @@map("students")
+}
+
+model StudentPayment {
+  id             String   @id @default(cuid())
+  studentId      String   @map("student_id")
+  student        Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  fechaPago      DateTime @default(now()) @map("fecha_pago")
+  mesAplicado    String   @map("mes_aplicado")
+  montoPagado    Float    @map("monto_pagado")
+  medioPago      String   @map("medio_pago")
+  notas          String?
+  comprobanteRef String?  @map("comprobante_ref")
+
+  @@map("student_payments")
+}
+
+model Employee {
+  id             String            @id @default(cuid())
+  nombre         String
+  apellido       String
+  dni            String?
+  telefono       String?
+  rolPuesto      String            @map("rol_puesto")
+  sueldoAcordado Float             @map("sueldo_acordado")
+  modalidad      String            @default("MENSUAL")
+  activo         Boolean           @default(true)
+  pagos          EmployeePayment[]
+
+  @@map("employees")
+}
+
+model EmployeePayment {
+  id          String    @id @default(cuid())
+  employeeId  String    @map("employee_id")
+  employee    Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  fechaPago   DateTime? @map("fecha_pago")
+  mesAplicado String    @map("mes_aplicado")
+  montoPagado Float     @map("monto_pagado")
+  estado      String    @default("PENDIENTE")
+  medioPago   String?   @map("medio_pago")
+  notas       String?
+
+  @@map("employee_payments")
+}
+
+model ExpenseCategory {
+  id       String    @id @default(cuid())
+  nombre   String    @unique
+  expenses Expense[]
+
+  @@map("expense_categories")
+}
+
+model Expense {
+  id             String          @id @default(cuid())
+  categoriaId    String          @map("categoria_id")
+  categoria      ExpenseCategory @relation(fields: [categoriaId], references: [id])
+  descripcion    String
+  fechaGasto     DateTime        @default(now()) @map("fecha_gasto")
+  mesAplicado    String          @map("mes_aplicado")
+  monto          Float
+  medioPago      String          @map("medio_pago")
+  comprobanteRef String?         @map("comprobante_ref")
+
+  @@map("expenses")
+}
